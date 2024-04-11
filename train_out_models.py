@@ -116,7 +116,7 @@ if __name__ == '__main__':
         '--maxiters',
         help='maximum poison iterations',
         type=int,
-        default= 6
+        default= 5
     )
     
     
