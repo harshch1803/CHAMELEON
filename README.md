@@ -18,7 +18,7 @@ python3 -u train_out_models.py -d [--data] -out [--outmodels] -tp [--psnthresh] 
 
 The arguments for the script are as follows:
 ```shell
-data (str) -- Dataset to run the attack. Options: 'cifar10', 'cifar100', 'gtsrb'.
+data (str) -- Dataset to run the attack. Default: 'cifar10' (options: 'cifar10', 'cifar100', 'gtsrb').
 outmodels (int) -- Number of OUT models. Default: '8'.
 psnthresh (float) -- Poisoning Threshold. Default: '0.13'.
 maxiters (int) -- Maximum Poisoning Iterations. Default: '5'.
@@ -33,7 +33,7 @@ python3 -u find_neighbors.py -d [--data] -aug [--augrep] -tnb [--nbrthresh]  -c 
 
 The arguments for the script are as follows:
 ```shell
-data (str) -- Dataset to run the attack. Options: 'cifar10', 'cifar100', 'gtsrb'.
+data (str) -- Dataset to run the attack. Default: 'cifar10' (options: 'cifar10', 'cifar100', 'gtsrb').
 augrep (int) -- Number of random augmentations to generate. Default: '128'.
 nbrthresh (float) -- Poisoning Threshold. Default: '0.75'.
 cuda (int) -- The GPU device number to run the attack. Default: '0'.
@@ -60,8 +60,9 @@ python3 -u run_dtest.py -d [--data] -aug [--augrep] -c [--cuda]
 
 The arguments for the script are as follows:
 ```shell
-data (str) -- Dataset to run the attack. Options: 'cifar10', 'cifar100', 'gtsrb'.
+data (str) -- Dataset to run the attack. Default: 'cifar10' (options: 'cifar10', 'cifar100', 'gtsrb').
 augrep (int) -- Number of augmentations per challenge point. Default: '128'.
 cuda (int) -- The GPU device number to run the attack. Default: '0'.
+```
 
 The scores are saved in the  `SavedScores` folder. ROC curves are saved in the `Figures` folder.
