@@ -14,6 +14,7 @@ from utils.adaptivepoison import AdaptivePoison as AP
 import argparse
 import pickle
 
+'''Trains target models on a different seed compared to the shadow models.'''
 def train_target_models(data_str, n_sms, cuda_device):
     
     if((data_str == 'cifar10') or (data_str == 'cifar100')):

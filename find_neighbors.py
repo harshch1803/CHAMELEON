@@ -12,8 +12,6 @@ import warnings
 warnings.filterwarnings("ignore")
 import argparse
 from utils.influence import InfluenceMeasure
-# from utils.attacks import *
-# from utils.labelonlymi import plot_rocs
 
 
 if __name__ == '__main__':

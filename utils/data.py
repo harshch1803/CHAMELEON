@@ -93,7 +93,6 @@ class AugmentedDataset(Dataset):
         return len(self._mem_set)
     
     def __getitem__(self, idx):
-#         random.seed(self._seed_list[idx])
         torch.manual_seed(self._seed_list[idx])
         aug_img = self.custom_transform(self._mem_set[idx][0])
         label = self._mem_set[idx][1]

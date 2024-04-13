@@ -78,16 +78,14 @@ def get_gaus_params(in_dict, out_dict, num_tgt_pts):
     for chp_pt in range(num_tgt_pts):
         
         in_mean = torch.mean(in_dict[chp_pt], dim = 1)
-        in_std = torch.std(in_dict[chp_pt], dim = 1)
+        in_std = torch.std(in_dict[chp_pt], dim = 1) + 1e-5
         
-        out_mean = torch.mean(out_dict[chp_pt], dim = 1)
-        out_std = torch.std(out_dict[chp_pt], dim = 1)
+        out_mean = torch.mean(out_dict[chp_pt], dim = 1) 
+        out_std = torch.std(out_dict[chp_pt], dim = 1) + 1e-5
         
-        
-        for aug_idx in range(num_augs):    
+        for aug_idx in range(num_augs): 
             
             in_dist[chp_pt][aug_idx] = torch.distributions.normal.Normal(in_mean[aug_idx], in_std[aug_idx])
-
             out_dist[chp_pt][aug_idx] = torch.distributions.normal.Normal(out_mean[aug_idx], out_std[aug_idx])   
     
     return in_dist, out_dist
@@ -103,10 +101,10 @@ def find_closest_neighbors(refin_logit_dict, refout_logit_dict, in_dist, out_dis
     for chp_pt in range(num_tgt_pts):
         
         in_mean = torch.mean(refin_logit_dict[chp_pt])
-        in_std = torch.std(refin_logit_dict[chp_pt])
+        in_std = torch.std(refin_logit_dict[chp_pt]) + 1e-5
         
         out_mean = torch.mean(refout_logit_dict[chp_pt])
-        out_std = torch.std(refout_logit_dict[chp_pt])
+        out_std = torch.std(refout_logit_dict[chp_pt]) + 1e-5
         
         ref_in_dist = torch.distributions.normal.Normal(in_mean, in_std)
         ref_out_dist = torch.distributions.normal.Normal(out_mean, out_std)
@@ -219,10 +217,9 @@ class InfluenceMeasure:
             position=0, 
             leave=True,
         ):
-#             print("DEV", self.device)
             shadow_model = torch.load(
-                # f"{self.saved_models_dir}/out_model_{i+1}",
-                f"{self.saved_models_dir}/shadow_model_{i+1}",
+                f"{self.saved_models_dir}/out_model_{i+1}",
+                # f"{self.saved_models_dir}/shadow_model_{i+1}",
                 map_location=self.device,
             )
             
@@ -289,8 +286,7 @@ class InfluenceMeasure:
 
             for i in range(self.num_shadow_models):
                 shadow_model = torch.load(
-                    # f"{self.saved_models_dir}/out_model_{i+1}",
-                    f"{self.saved_models_dir}/shadow_model_{i+1}",
+                    f"{self.saved_models_dir}/out_model_{i+1}",
                     map_location=self.device,
                 )
 
@@ -347,7 +343,6 @@ class InfluenceMeasure:
             
             in_logit_dict[challenge_pt] = in_set
             out_logit_dict[challenge_pt] = out_set
-            
         
         in_dist, out_dist = get_gaus_params(in_logit_dict, out_logit_dict, num_tgt_pts)
         

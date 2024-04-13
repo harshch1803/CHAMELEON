@@ -100,7 +100,7 @@ if __name__ == '__main__':
         '--outmodels',
         help='num of OUT models',
         type=int,
-        default= 8
+        default= 4
     )
     
     parser.add_argument(
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         '--maxiters',
         help='maximum poison iterations',
         type=int,
-        default= 5
+        default= 6
     )
     
     

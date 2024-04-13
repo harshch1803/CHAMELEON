@@ -1,10 +1,6 @@
 import torch.nn as nn
 import torch
 import torch.optim as optim
-from opacus import PrivacyEngine
-from opacus.data_loader import DPDataLoader
-from opacus.validators import ModuleValidator
-from opacus.utils.batch_memory_manager import BatchMemoryManager
 import numpy as np
 import os
 import warnings
@@ -180,8 +176,6 @@ class ModelUtility:
             desc_string = "Training..."
         
         for epoch in tqdm(range(1, num_epochs + 1), desc=desc_string):
-            # print(f"Epoch {epoch}")
-            # print("-" * 10)
             
             phases = ["train"]
             if not train_only:
@@ -294,136 +288,3 @@ class ModelUtility:
             dir_to_save_at + "/" + archictecture_name + "_" + str(epoch) + ".pth"
         )
         torch.save(model_to_save, file_to_save_at)
-
-    def private_fit(
-        self,
-        dataloaders,
-        segment="train",
-        epsilon=8,
-        delta=10e-5,
-        C=5,
-        num_epochs=100,
-        start_epoch=0,
-        save=False,
-        backup_optimizer=optim.SGD
-    ):
-        self.model.train()
-        # inspector = DPModelInspector()
-
-        # try:
-        #     inspector.validate(self.model)
-        # except:
-        #     raise Exception("Model is not compatible with Opacus.\nUse module_modification utility to convert layers from BatchNorm to GroupNorm")
-        if not ModuleValidator.is_valid(self.model):
-            self.model = ModuleValidator.fix(self.model)
-            self.optimizer = backup_optimizer(self.model.parameters(), lr=self.lr)
-
-        self.model.to(self.device)
-
-        privacy_engine = PrivacyEngine()
-         
-        self.model, self.optimizer, dataloader = privacy_engine.make_private_with_epsilon(
-            module=self.model,
-            optimizer=self.optimizer,
-            epochs=num_epochs,
-            data_loader=dataloaders[segment],
-            target_epsilon=epsilon,
-            target_delta=delta,
-            max_grad_norm=C
-        )
-        
-        
-        
-        with BatchMemoryManager(data_loader=dataloader, 
-                                max_physical_batch_size=64, 
-                                optimizer=self.optimizer) as memory_safe_dl:
-            dataloaders[segment] = memory_safe_dl
-            
-        epoch_loss = []
-        epoch_acc = []
-        
-        for epoch in tqdm(range(1, num_epochs + 1), desc="Epochs:"):
-            # print(f"Epoch {epoch}")
-            # print("-" * 10)
-
-            for phase in [segment]:
-
-                # Allow gradients when in training phase
-                if phase == segment:
-                    self.model.train()
-                    running_loss = 0.0
-
-                # Freeze gradients when in testing phase
-                elif phase == "test":
-                    self.model.eval()
-                    running_test_loss = 0.0
-                
-                for i, (inputs, labels) in enumerate(dataloaders[phase]):
-                    inputs = inputs.to(self.device)
-                    labels = labels.to(self.device)
-
-                    self.optimizer.zero_grad()
-                    self.model.zero_grad()
-
-                    if phase == segment:
-                        outputs = self.model(inputs)
-                        loss = self.criterion(outputs, labels)
-                        loss.backward()
-                        self.optimizer.step()
-                        running_loss += loss.item() * inputs.size(0)
-
-                    if phase == "test":
-                        with torch.no_grad():
-                            outputs = self.model(inputs)
-                            test_loss = self.criterion(outputs, labels)
-                            running_test_loss += test_loss.item() * inputs.size(0)
-                
-                if(phase == segment):
-                    self.scheduler.step()
-
-            epoch_loss.append(running_loss / len(dataloaders[segment].dataset))
-            # epoch_acc.append(running_loss / len(dataloaders["test"].dataset))
-
-            # Zero-one Accuracy
-            # test_acc = self.evaluate_accuracy(dataloaders["test"])
-
-            if save:
-                self.save_model(self.model, epoch + start_epoch, dp=True)
-
-            epsilon = privacy_engine.get_epsilon(delta)
-
-            # print(
-            #     f"Train Loss: {epoch_loss[epoch - 1]:.4}\n"
-            #     f"Test Loss {epoch_acc[epoch-1]:.4}\n"
-            #     f"Test Accuracy {test_acc*100:.4}%\n"
-            #     f"(ε = {epsilon:.2f}, δ = {delta})\n"
-            # )
-
-        # Save stats as np.array's
-        archictecture_name = str(type(self.model)).split(".")[-1].split("'")[0]
-        if save:
-            np.save(
-                self.prefix
-                + "DP_"
-                + archictecture_name
-                + f"_Checkpoints/DP-Train_Loss_{num_epochs}-Epochs",
-                epoch_loss,
-            )
-            np.save(
-                self.prefix
-                + "DP_"
-                + archictecture_name
-                + f"_Checkpoints/DP-Test_Loss_{num_epochs}-Epochs",
-                epoch_acc,
-            )
-
-        # privacy_engine.detach()
-        
-        self.model.cpu()
-#         inputs.detach().cpu()
-#         labels.detach().cpu()
-        # del inputs, outputs, labels
-        # torch.cuda.empty_cache()
-        # gc.collect()
-        
-        return self.model, epoch_loss, epoch_acc

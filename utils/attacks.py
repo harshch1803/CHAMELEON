@@ -117,7 +117,6 @@ class OnlineLiraAttack(BaseAttack):
         # Target Model's confidence with respect to the ground truth label
         observed_confs = target_point_confs[challenge_pt][target_model]
         label = self.dataset[self.target_indices[challenge_pt]][1]
-#         label = (self.dataset[self.target_indices[challenge_pt]][1] +1)%10
         
         observed_conf = observed_confs[label]
         
@@ -208,7 +207,6 @@ class GapAttack(BaseAttack):
         # Target Model's confidence with respect to the ground truth label
         observed_confs = target_point_confs[challenge_pt][target_model]
         true_label = self.dataset[self.target_indices[challenge_pt]][1]
-#         observed_conf = observed_confs[label]
         predicted_label = np.argmax(observed_confs)
         
         lo_score = int(predicted_label == true_label) 
@@ -265,9 +263,8 @@ class OurAttack(BaseAttack):
         test_loader = torch.utils.data.DataLoader(test_data, batch_size= len(test_data))
         
         target_model = torch.load(
-            f"{saved_models_dir}/shadow_model_{target_model_ind+1}",
             # f"{saved_models_dir}/out_model_{target_model_ind+1}",
-            # f"{saved_models_dir}/target_model_{target_model_ind+1}",
+            f"{saved_models_dir}/target_model_{target_model_ind+1}",
             map_location=self.device,
         )
      

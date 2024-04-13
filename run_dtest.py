@@ -132,6 +132,8 @@ if __name__ == '__main__':
     for attack_name, psn_mem_scores in psnd_scores.items():
         all_psnd_scores[attack_name] = psn_mem_scores
     
+    _, _ = plot_rocs(all_scores, total_gts, pos_label=1, save_file=True, title=title_string, file_name= data_str.upper()+"-Scores")
+
     file = open("SavedScores/"+data_str+"_scores-"+str(augment_replicas)+".pkl","wb")
     pickle.dump(all_scores, file)
     file.close()
@@ -139,9 +141,6 @@ if __name__ == '__main__':
     file = open("SavedScores/"+data_str+"_psnd_scores-"+str(augment_replicas)+".pkl","wb")
     pickle.dump(all_psnd_scores, file)
     file.close()
-    
-    
-    _, _ = plot_rocs(all_scores, total_gts, pos_label=1, save_file=True, title=title_string, file_name= data_str.upper()+"-Scores")
 
     
     

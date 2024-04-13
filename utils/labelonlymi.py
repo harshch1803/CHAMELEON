@@ -48,8 +48,11 @@ def plot_rocs(scores, ground_truth, pos_label=1, title="", save_file=False, file
         plots_dict[attack] = {"fpr": fpr, "tpr": tpr}
         
         fpr_idx = find_nearest(fpr, 0.01)
-#         print(fpr)
-        print(fpr[fpr_idx], tpr[fpr_idx])
+        print(f"FPR: {fpr[fpr_idx]}, TPR: {tpr[fpr_idx]}")
+        fpr_idx = find_nearest(fpr, 0.05)
+        print(f"FPR: {fpr[fpr_idx]}, TPR: {tpr[fpr_idx]}")
+        fpr_idx = find_nearest(fpr, 0.1)
+        print(f"FPR: {fpr[fpr_idx]}, TPR: {tpr[fpr_idx]}")
         
         print(f"{attack}:\nAccuracy: {acc}\nAUC: {auc}\n*******************************\n")
         # plt.title(title)
@@ -63,15 +66,11 @@ def plot_rocs(scores, ground_truth, pos_label=1, title="", save_file=False, file
             "Accuracy": acc,
             "AUC": auc,
         }
-        
-        
     
     plt.semilogx()
     plt.semilogy()
     plt.xlim(1e-2,1)
     plt.ylim(1e-2,1)
-    # plt.xlim(0,1)
-    # plt.ylim(0,1)
     plt.xlabel("False Positive Rate",fontsize = 14)
     plt.ylabel("True Positive Rate",fontsize = 14)
     plt.plot([0, 1], [0, 1], ls='--', color='gray')
@@ -112,7 +111,6 @@ class LabelOnlyMI:
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
             outputs = model(inputs)
-#             print(torch.max(outputs, dim=1)[1])
             total_correct += (torch.max(outputs, dim=1)[1] == labels).sum()
             total_len += outputs.shape[0]
     
@@ -151,10 +149,8 @@ class LabelOnlyMI:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs)
         
         shadow_model.train()
-        # print("\n")
-        # print("-" * 8)
-        # print("Training Shadow Model...\n")
-        for _ in tqdm(range(self.epochs), desc=f"Training Shadow Model {shadow_model_number}"):
+        
+        for _ in tqdm(range(self.epochs), desc=f"Training Target Model {shadow_model_number}"):
             running_loss = 0
             for (inputs, labels) in random_sample:
 
@@ -308,7 +304,7 @@ class LabelOnlyMI:
             self.batch_size = batch_size
             self.optimizer = optimizer
             self.momentum = momentum
-            self.num_shadow_models = num_shadow_models + 1
+            self.num_shadow_models = num_shadow_models
             self.num_target_points = num_target_points
             self.target_indices = target_indices
             self.poison_counter = poison_counter
@@ -404,11 +400,12 @@ class LabelOnlyMI:
         
         for i in tqdm(
             range(self.num_shadow_models), 
-            desc=f"Running Inference on Shadow Models", 
+            desc=f"Running Inference on Target Models", 
             position=0, 
             leave=True,
         ):
             shadow_model = torch.load(
+                # f"{self.saved_models_dir}/out_model_{i+1}",
                 f"{self.saved_models_dir}/target_model_{i+1}",
                 map_location=self.device,
             )
@@ -450,7 +447,7 @@ class LabelOnlyMI:
         
         for target_model_ind in tqdm(
             range(self.num_shadow_models),
-                desc=f"Running Attack on {self.num_shadow_models} shadow models", 
+                desc=f"Running Attack on {self.num_shadow_models} Target models", 
                 position=0, 
                 leave=True
         ):  
@@ -584,7 +581,7 @@ class LabelOnlyMI:
         for i in tqdm(
             range(self.num_shadow_models),
             # range(8),
-            desc=f"Running Inference on Shadow Models", 
+            desc=f"Running Inference on Target Models", 
             position=0, 
             leave=True,
         ):

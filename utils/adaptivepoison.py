@@ -77,15 +77,10 @@ class AdaptivePoison:
         
         shadow_model.train()
     
-        # print("------------------")
         for _ in tqdm(range(self.epochs), desc=f"Training Shadow Model {shadow_model_number}"):
             running_loss = 0
             
             for (inputs, labels) in random_sample:
-                
-                
-                # print(inputs)
-                # print(labels)
                         
                 optimizer.zero_grad()
 
@@ -116,8 +111,6 @@ class AdaptivePoison:
     # Code for training 'm' OUT models.
     def _train_models(self):
         
-        # print(f"The total dataset size is: {self.sampled_distribution_size}")
-        
         if not os.path.exists(self.saved_models_dir):
                 os.mkdir(self.saved_models_dir)
         
@@ -129,7 +122,6 @@ class AdaptivePoison:
             psnd_dataset = data_util.AdaptivePoisonData(original_data= self.dataset, target_indices= self.target_indices, num_classes= self.output_dim, replica_counter = self.poison_counter)
             
             assert len(psnd_dataset) == sum(self.poison_counter)
-        
         
         for shadow_model in range(self.num_shadow_models):
             training_subset = torch.utils.data.Subset(
@@ -147,6 +139,10 @@ class AdaptivePoison:
                 shadow_model_number=shadow_model + 1,
                 optimizer=self.optimizer,
             )
+
+        entries = copy.deepcopy(vars(self))
+        entries.pop("load_saved")
+        np.save(f"{self.saved_models_dir}/{self.name}.npy", entries, allow_pickle=True)
 
     def __init__(
         self,
@@ -261,32 +257,27 @@ class AdaptivePoison:
         replace=False,
         )
 
-        #Generating Training set for shadow models
+        #Generating Mask such that there are equal IN and OUT models for each challenge point
+        self.mask = np.zeros(shape=(self.num_target_points, self.num_shadow_models), dtype=int)
+        self.mask[:,:self.num_shadow_models//2] = 1
+        for i in range(self.num_target_points):
+            np.random.shuffle(self.mask[i])
+  
+        #Generating the Training set (without the target indices) for the shadow models
+        rem_idxs = [idx for idx in range (self.sampled_distribution_size) if idx not in self.target_indices ]
         self.shadow_indices = [
             self.random.choice(
-                list(range(self.sampled_distribution_size)),
-                self.train_size,
+                rem_idxs,
+                self.train_size - self.num_target_points,
                 replace=False,
             )
             for _ in range(self.num_shadow_models)
         ]
-        
-        
-        # Mask reference for in/out points in each shadow model training
-        self.mask = np.ndarray(shape=(self.num_target_points, self.num_shadow_models))
-        for i, ind in enumerate(self.target_indices):
-            for shadow_model in range(self.num_shadow_models):
-                # Decide whether or not it is in shadow model training
-                self.mask[i][shadow_model] = (
-                    1 if ind in self.shadow_indices[shadow_model] else 0
-                )
-                
-        # #Remove indices that are a part of the Challenge Set
-        # for i in range(self.num_shadow_models):
-        #     sample_indices = list(self.shadow_indices[i])
-        #     out_indices = [x for x in sample_indices if x not in set(self.target_indices)]
-        #     self.shadow_indices[i] = np.array(out_indices)
-    
+
+        #Appending the target indices to the remaining training indices for each shadow model.
+        for shadow_model in range (self.num_shadow_models):
+            target_idxs = np.array([self.target_indices[idx] for idx, in_val in enumerate(self.mask[:,shadow_model]) if in_val])
+            self.shadow_indices[shadow_model] = np.concatenate((self.shadow_indices[shadow_model], target_idxs), axis = None)
     
     def _model_confidence(
         self,
@@ -384,17 +375,12 @@ class AdaptivePoison:
                 self.save_dir = self.dataset_name+"-"+str(n_poisons)+"PModels"
                 self.saved_models_dir = f"ShadowModels/{self.save_dir}_{self.name}"
                 
-                # print(self.saved_models_dir)
-                
                 if(self.load_saved == False):
                     self._train_models()
                     
                 gt_confs, psnd_confs = self._get_OUT_confs()
                 
                 old_sum  = sum(self.poison_counter)
-                
-                # print(sum(self.poison_counter))
-                
                 
                 for pt in range (self.num_target_points):
                     
@@ -403,9 +389,6 @@ class AdaptivePoison:
                         
                     conf_arr  = gt_confs[pt].numpy()[~self.mask[pt].astype(bool)]
                     
-                    # print(conf_arr.shape[0])
-                    
-                    # if(np.mean(gt_confs[pt].numpy()) > self.poison_thresh):
                     if(np.mean(conf_arr) > self.poison_thresh):
                         
                         if(n_poisons == self.max_poison_iters):
@@ -419,7 +402,6 @@ class AdaptivePoison:
                         
                 #Breaking Condition: No more poisoned points required.
                 if(old_sum == sum(self.poison_counter)):
-                # if(sum(poison_bool_arr) == 500):
                     print("Breaking Early")
                     break
                     
