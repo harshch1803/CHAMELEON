@@ -4,5 +4,3 @@ tqdm==4.64.1
 matplotlib==3.6.3
 scikit-learn==1.2.1
 pandas==1.5.1
-jupyter
-jupyterlab
