@@ -27,7 +27,7 @@ cuda (int) -- The GPU device number to run the attack. Default: '0'.
 ```
 
 **II) Membership Neighborhood Stage**
-The script below finds candidates for the 500 challenge points in the membership neighborhood space. The script can be run on a different GPU as soon as the first iteration of the Adaptive Poisoning stage is compeleted. Check if `2 x outmodels` in `ShadowModels/OPModels/` folder  are present before running this script. 
+The script below finds candidates for the 500 challenge points in the membership neighborhood space. The script can be run on a different GPU as soon as the first iteration of the Adaptive Poisoning stage is completed. Check if `2 x outmodels` in `ShadowModels/OPModels/` folder  are present before running this script. 
 
 ```shell
 python3 -u find_neighbors.py -d [--data] -aug [--augrep] -tnb [--nbrthresh]  -c [--cuda]
@@ -44,7 +44,7 @@ cuda (int) -- The GPU device number to run the attack. Default: '0'.
 Either increase the `augrep` or `nbrthresh` variable, in case the algorithm is not able to find neighbors. Note that, increasing the `nbrthresh` to a high value could potentially decrease the TPR scores.
 
 **III) Distinguishing Test** 
-The script below trains `tgtmodels` number of target models separately which includes the poisoned set created from our Adaptive poisoning stage. 
+The script below trains `tgtmodels` number of target models separately which includes the poisoned set created from our Adaptive poisoning stage.
 
 ```shell
 python3 -u train_target_models.py -d [--data] -tgt [--tgtmodels]  -c [--cuda]
@@ -57,7 +57,7 @@ tgtmodels (int) -- Number of Target models. Default: '16'.
 cuda (int) -- The GPU device number to run the attack. Default: '0'.
 ```
 
-The script below runs our distinguishing test on the target models and prints out the TPR at different FPRs.
+The script below runs our distinguishing test on the target models and prints out the TPR at different FPRs.  Create a `SavedScores` and `Figures` folder before running the script.
 
 ```shell
 python3 -u run_dtest.py -d [--data] -aug [--augrep] -c [--cuda]
